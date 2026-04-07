@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NONIOAEY - Skin Builder Pro</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Mitr', 'sans-serif'] },
+                    colors: { theme: { bg: '#F8FAFC', pink: '#FFB6C1', blue: '#AEE2FF', text: '#334155' } },
+                    boxShadow: { 'soft': '0 10px 25px -5px rgba(174, 226, 255, 0.4)', 'card': '0 4px 20px -2px rgba(255, 182, 193, 0.3)' }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; color: #334155; overflow-x: hidden; touch-action: manipulation; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #FFB6C1; border-radius: 10px; }
+        
+        #stage { width: 100%; padding: 20px 10px; display: flex; justify-content: center; overflow: visible; }
+        #collage { display: flex; flex-wrap: wrap; justify-content: flex-start; width: var(--cw, 800px); min-width: var(--cw, 800px); transform-origin: top center; }
+        
+        /* แก้ให้รูปยืนติดพื้น (bottom) และขนาดเท่ากันเป๊ะ */
+        .item { position: relative; width: var(--w, 150px); height: calc(var(--w) * 1.4); margin-right: var(--mx, 0px); margin-bottom: var(--my, 0px); cursor: grab; display: flex; align-items: flex-end; justify-content: center; }
+        .item img { width: 100%; height: 100%; object-fit: contain; object-position: bottom center; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); pointer-events: none; }
+        
+        .del { position: absolute; top: -5px; right: -5px; background: #FF4D4D; color: white; width: 24px; height: 24px; border-radius: 50%; display: none; align-items: center; justify-content: center; z-index: 9999; border: 2px solid white; font-size: 12px; }
+        .item:hover .del { display: flex; }
+        
+        .glass-modal { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(30px); border: 2px solid white; }
+        #load { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(5px); z-index: 30000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .char-btn.active { background-color: #FFB6C1; color: white; border-color: #FFB6C1; transform: scale(1.05); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="antialiased selection:bg-theme-blue relative">
+
+    <div class="max-w-3xl mx-auto min-h-screen bg-white sm:shadow-soft relative flex flex-col">
+        
+        <header class="bg-gradient-to-br from-theme-pink/20 via-white to-theme-blue/20 pt-10 pb-8 px-6 rounded-b-[40px] text-center border-b-2 border-white shadow-sm">
+            <div class="inline-flex items-center gap-2 bg-white/90 px-6 py-2 rounded-full border-2 border-white shadow-card">
+                <i data-lucide="sparkles" class="w-4 h-4 text-theme-blue"></i>
+                <h1 class="text-2xl font-bold tracking-[0.2em] text-theme-text uppercase">NONIOAEY</h1>
+                <i data-lucide="sparkles" class="w-4 h-4 text-theme-pink"></i>
+            </div>
+        </header>
+
+        <main class="flex-1 px-4 py-6 space-y-6">
+            <section class="bg-white rounded-[30px] p-5 shadow-card border-2 border-slate-50">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 text-center">
+                    <div><label class="text-[10px] font-bold text-slate-400">สกินต่อแถว</label><input type="number" id="cols" value="13" class="w-full bg-slate-50 border-2 rounded-xl py-2 text-center font-bold"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400">ขนาดรูป</label><input type="number" id="w" value="150" class="w-full bg-slate-50 border-2 rounded-xl py-2 text-center font-bold"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400">ซ้อน X</label><input type="number" id="mx" value="-30" class="w-full bg-slate-50 border-2 rounded-xl py-2 text-center font-bold"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400">ซ้อน Y</label><input type="number" id="my" value="-40" class="w-full bg-slate-50 border-2 rounded-xl py-2 text-center font-bold"></div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button onclick="openLibrary()" class="bg-theme-blue text-white py-4 rounded-2xl font-bold shadow-soft flex items-center justify-center gap-2">
+                        <i data-lucide="library" class="w-5 h-5"></i> เลือกจากคลังสกิน
+                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="document.getElementById('file').click()" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold border-2 border-dashed border-slate-300">อัปโหลดเอง</button>
+                        <button onclick="save()" class="flex-1 bg-theme-pink text-white py-3 rounded-xl font-bold shadow-card">บันทึกรูปภาพ</button>
+                    </div>
+                    <input type="file" id="file" multiple accept="image/*" class="hidden">
+                </div>
+            </section>
+
+            <section class="bg-slate-50 rounded-[40px] border-4 border-white shadow-inner min-h-[450px] relative overflow-hidden">
+                <div id="stage"><div id="collage"></div></div>
+            </section>
+        </main>
+
+        <div id="libraryModal" class="fixed inset-0 z-[10000] hidden flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeLibrary()"></div>
+            <div class="glass-modal w-full max-w-2xl h-[85vh] rounded-[45px] shadow-2xl relative flex flex-col overflow-hidden">
+                <div class="p-6 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-theme-text flex items-center gap-2 italic"><i data-lucide="image" class="text-theme-pink"></i> SKIN LIBRARY</h3>
+                    <button onclick="closeLibrary()" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center font-bold text-slate-500">✕</button>
+                </div>
+                <div class="px-6 pb-4 space-y-4">
+                    <input type="text" id="libSearch" placeholder="ค้นหาสกิน/ตัวละคร..." class="w-full p-4 rounded-2xl border-2 border-white bg-white/50 outline-none focus:border-theme-blue">
+                    <div id="charFilter" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar"></div>
+                </div>
+                <div id="libGrid" class="flex-1 overflow-y-auto p-6 grid grid-cols-2 sm:grid-cols-3 gap-4 pb-24"></div>
+            </div>
+        </div>
+
+        <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-slate-800/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl font-bold transition-all duration-300 opacity-0 pointer-events-none z-[60000] translate-y-10 border border-white/20 text-sm flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i> <span id="toastMsg">เพิ่มสกินสำเร็จ!</span>
+        </div>
+
+        <div id="load"><i data-lucide="loader-2" class="w-10 h-10 text-theme-pink animate-spin mb-2"></i><p class="text-xs font-bold uppercase tracking-widest text-theme-text">Processing...</p></div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const collage = document.getElementById('collage');
+        const load = document.getElementById('load');
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR7BKWYQRWWJSCvoT8gnPcTzU0HGylpQp-tgx7ioueEydu-C8FdLM7nwpKwa_fjAVlpWAGVSHGZuL2X/pub?output=csv';
+        let allSkins = [];
+
+        function updateZ() {
+            // ดักไม่ให้มันนับเงาตอนลากวาง (กันบัคภาพหด)
+            const items = document.querySelectorAll('.item:not(.sortable-ghost)');
+            let cols = Math.max(1, parseInt(document.getElementById('cols').value) || 1);
+            items.forEach((item, i) => {
+                let row = Math.floor(i / cols);
+                let col = i % cols;             
+                item.style.zIndex = (row * 1000) + (cols - col); 
+            });
+        }
+
+        function refresh() {
+            let cols = Math.max(1, parseInt(document.getElementById('cols').value) || 1);
+            let w = parseFloat(document.getElementById('w').value) || 150;
+            let mx = parseFloat(document.getElementById('mx').value) || 0;
+            let my = parseFloat(document.getElementById('my').value) || 0;
+            let exactWidth = w + ((cols - 1) * (w + mx)); 
+            collage.style.setProperty('--cw', exactWidth + 'px');
+            collage.style.setProperty('--w', w + 'px');
+            collage.style.setProperty('--mx', mx + 'px');
+            collage.style.setProperty('--my', my + 'px');
+            
+            let availableWidth = window.innerWidth - 40; 
+            let totalItems = document.querySelectorAll('.item:not(.sortable-ghost)').length;
+            
+            if(totalItems > 0) {
+                let rows = Math.ceil(totalItems / cols);
+                let itemHeight = w * 1.4;
+                let exactHeight = itemHeight + ((rows - 1) * (itemHeight + my));
+                
+                // ใช้ zoom แทน transform ป้องกันบัครูปหดตัวเวลากดขยับ
+                if (exactWidth > availableWidth) {
+                    let scaleRatio = availableWidth / exactWidth;
+                    collage.style.zoom = scaleRatio;
+                    collage.style.transform = 'none';
+                    document.getElementById('stage').style.height = (exactHeight * scaleRatio + 60) + 'px'; 
+                } else {
+                    collage.style.zoom = 1;
+                    collage.style.transform = 'none';
+                    document.getElementById('stage').style.height = exactHeight + 60 + 'px'; 
+                }
+            } else { 
+                document.getElementById('stage').style.height = 'auto'; 
+            }
+            updateZ(); 
+        }
+
+        ['cols','w','mx','my'].forEach(id => document.getElementById(id).oninput = refresh);
+
+        // ระบบแจ้งเตือนเด้งขึ้นมาเวลาพี่กดเลือกสกิน
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('opacity-0', 'translate-y-10');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-10');
+            }, 2000);
+        }
+
+        // ระบบตัดขอบใสตัวใหม่ ทะลุระบบป้องกัน Google Drive ได้
+        async function cropImageFromUrl(imageUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous"; 
+                // ใช้ API ตัวนี้เพื่อข้ามการบล็อก
+                img.src = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(imageUrl);
+                
+                img.onload = () => {
+                    try {
+                        const cvs = document.createElement('canvas');
+                        const ctx = cvs.getContext('2d', {willReadFrequently:true});
+                        cvs.width = img.width; cvs.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        const data = ctx.getImageData(0,0,cvs.width,cvs.height).data;
+                        let t=cvs.height, b=0, l=cvs.width, r=0, found=false;
+                        for(let y=0; y<cvs.height; y++) {
+                            for(let x=0; x<cvs.width; x++) {
+                                if(data[(y*cvs.width+x)*4+3] > 20) { 
+                                    t=Math.min(t,y); b=Math.max(b,y); l=Math.min(l,x); r=Math.max(r,x); found=true;
+                                }
+                            }
+                        }
+                        if(!found) { resolve(imageUrl); return; }
+                        const cCvs = document.createElement('canvas');
+                        cCvs.width = r-l+1; cCvs.height = b-t+1;
+                        cCvs.getContext('2d').drawImage(img, l, t, cCvs.width, cCvs.height, 0, 0, cCvs.width, cCvs.height);
+                        resolve(cCvs.toDataURL());
+                    } catch(e) { resolve(imageUrl); }
+                };
+                img.onerror = () => resolve(imageUrl);
+            });
+        }
+
+        async function openLibrary() {
+            document.getElementById('libraryModal').classList.remove('hidden');
+            if (allSkins.length === 0) {
+                load.style.display = 'flex';
+                try {
+                    const res = await fetch(csvUrl);
+                    const text = await res.text();
+                    const rows = text.split('\n').slice(1);
+                    allSkins = rows.map(r => {
+                        const c = r.split(',');
+                        const fileIdMatch = c[2]?.match(/[-\w]{25,}/);
+                        const fileId = fileIdMatch ? fileIdMatch[0] : null;
+                        return { 
+                            char: c[0]?.trim() || 'General', 
+                            name: c[1]?.trim() || 'Skin', 
+                            url: fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w500` : ''
+                        };
+                    }).filter(s => s.url);
+                    renderFilters();
+                    renderLibrary(allSkins);
+                } catch (e) { alert("Error loading data."); }
+                load.style.display = 'none';
+            }
+        }
+
+        function renderFilters() {
+            const container = document.getElementById('charFilter');
+            const chars = [...new Set(allSkins.map(s => s.char))];
+            container.innerHTML = `<button onclick="filterChar('all', this)" class="char-btn active px-5 py-2 rounded-full bg-white border-2 text-[11px] font-bold shadow-sm shrink-0 transition-all">ทั้งหมด</button>` + 
+                chars.map(c => `<button onclick="filterChar('${c}', this)" class="char-btn px-5 py-2 rounded-full bg-white border-2 border-white text-[11px] font-bold shadow-sm shrink-0 transition-all">${c}</button>`).join('');
+        }
+
+        function filterChar(name, btn) {
+            document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filtered = name === 'all' ? allSkins : allSkins.filter(s => s.char === name);
+            renderLibrary(filtered);
+        }
+
+        function renderLibrary(skins) {
+            const grid = document.getElementById('libGrid');
+            grid.innerHTML = skins.map(s => `
+                <div onclick="addItemFromLibrary('${s.url}', '${s.name}', this)" class="relative bg-white/50 p-2 rounded-[2rem] border-4 border-white hover:border-theme-pink transition-all cursor-pointer group shadow-sm flex flex-col items-center overflow-hidden">
+                    <img src="${s.url}" class="w-full aspect-square object-contain rounded-2xl group-hover:scale-110 transition-transform">
+                    <div class="text-center mt-2 w-full">
+                        <p class="text-[8px] font-bold text-theme-blue uppercase">${s.char}</p>
+                        <p class="text-[10px] text-slate-500 truncate font-medium">${s.name}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('libSearch').oninput = (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allSkins.filter(s => s.char.toLowerCase().includes(term) || s.name.toLowerCase().includes(term));
+            renderLibrary(filtered);
+        };
+
+        function closeLibrary() { document.getElementById('libraryModal').classList.add('hidden'); }
+
+        async function addItemFromLibrary(url, name, btnElement) {
+            if (btnElement.dataset.loading === "true") return; 
+            btnElement.dataset.loading = "true";
+
+            // ขึ้นรูปติ๊กถูกให้รู้ว่ากดติดแล้ว
+            const originalHtml = btnElement.innerHTML;
+            btnElement.innerHTML += `<div class="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+                <i data-lucide="check-circle-2" class="w-8 h-8 text-green-500 mb-1"></i>
+                <span class="text-green-600 text-[10px] font-bold">เพิ่มแล้ว!</span>
+            </div>`;
+            lucide.createIcons();
+
+            // ส่งไปตัดขอบก่อนเอาลงกระดาน
+            const croppedUrl = await cropImageFromUrl(url);
+
+            const div = document.createElement('div');
+            div.className = 'item';
+            div.innerHTML = `<button class="del" onclick="this.parentElement.remove(); refresh();">✕</button><img src="${croppedUrl}">`;
+            collage.appendChild(div);
+            refresh();
+            showToast(`เพิ่มสกิน ${name} สำเร็จ!`);
+
+            setTimeout(() => {
+                btnElement.innerHTML = originalHtml;
+                btnElement.dataset.loading = "false";
+            }, 1000);
+        }
+
+        async function cropLocalFile(file) {
+            return new Promise(res => {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                img.onload = () => {
+                    const cvs = document.createElement('canvas');
+                    const ctx = cvs.getContext('2d', {willReadFrequently:true});
+                    cvs.width = img.width; cvs.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    const data = ctx.getImageData(0,0,cvs.width,cvs.height).data;
+                    let t=cvs.height, b=0, l=cvs.width, r=0, found=false;
+                    for(let y=0; y<cvs.height; y++) {
+                        for(let x=0; x<cvs.width; x++) {
+                            if(data[(y*cvs.width+x)*4+3] > 20) {
+                                t=Math.min(t,y); b=Math.max(b,y); l=Math.min(l,x); r=Math.max(r,x); found=true;
+                            }
+                        }
+                    }
+                    if(!found) { res(img.src); return; }
+                    const cCvs = document.createElement('canvas');
+                    cCvs.width = r-l+1; cCvs.height = b-t+1;
+                    cCvs.getContext('2d').drawImage(img, l, t, cCvs.width, cCvs.height, 0, 0, cCvs.width, cCvs.height);
+                    res(cCvs.toDataURL());
+                    URL.revokeObjectURL(img.src);
+                };
+            });
+        }
+
+        document.getElementById('file').onchange = async (e) => {
+            const files = Array.from(e.target.files);
+            if(!files.length) return;
+            load.style.display = 'flex';
+            for(let f of files) {
+                const url = await cropLocalFile(f);
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerHTML = `<button class="del" onclick="this.parentElement.remove(); refresh();">✕</button><img src="${url}">`;
+                collage.appendChild(div);
+            }
+            load.style.display = 'none';
+            refresh();
+        };
+
+        async function save() {
+            if(!collage.children.length) return;
+            load.style.display = 'flex';
+            document.querySelectorAll('.del').forEach(b => b.style.display = 'none');
+            
+            const originalZoom = collage.style.zoom; 
+            collage.style.zoom = 1; 
+            collage.style.transform = 'none';
+            
+            await new Promise(r => setTimeout(r, 200));
+            const cvs = await html2canvas(collage, { scale: 2, backgroundColor: null, useCORS: true });
+            const a = document.createElement('a');
+            a.download = `NONIOAEY-Final.png`;
+            a.href = cvs.toDataURL();
+            a.click();
+            
+            collage.style.zoom = originalZoom; 
+            document.querySelectorAll('.del').forEach(b => b.style.display = '');
+            load.style.display = 'none';
+        }
+
+        // แก้บัค Sortable ดึงภาพหด
+        new Sortable(collage, { 
+            animation: 150, 
+            delay: 100, 
+            delayOnTouchOnly: true,
+            forceFallback: true, // ตัวนี้ช่วยแก้บัคเวลาลากบนมือถือ
+            onEnd: refresh // ให้มันคำนวณใหม่เฉพาะตอนปล่อยมือเท่านั้น!
+        });
+        refresh();
+    </script>
+</body>
+</html>
